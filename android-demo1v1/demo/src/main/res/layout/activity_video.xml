@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".VideoActivity">
+
+
+    <com.shinevv.vvroom.demo1v1.view.PeerView
+        android:id="@+id/myselfVideo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </com.shinevv.vvroom.demo1v1.view.PeerView>
+    <com.shinevv.vvroom.demo1v1.view.PeerView
+        android:layout_marginTop="16dip"
+        android:layout_marginRight="16dip"
+        android:id="@+id/otherVideo"
+        android:layout_alignParentRight="true"
+        android:layout_width="120dp"
+        android:layout_height="160dp">
+
+    </com.shinevv.vvroom.demo1v1.view.PeerView>
+
+    <ImageView
+        android:id="@+id/hangup"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="32dp"
+        android:src="@mipmap/ic_call_reject" />
+
+</RelativeLayout>
