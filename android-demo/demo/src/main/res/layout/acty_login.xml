@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:toggle="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@mipmap/img_bg"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="35dp"
+        android:text="@string/join_vvroom"
+        android:textColor="@color/white"
+        android:textSize="22sp"/>
+
+
+    <ImageView
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
+        android:layout_marginTop="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2d343e"/>
+
+    <EditText
+        android:id="@+id/room_number"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:layout_marginTop="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="房间号码"
+        android:maxLines="1"
+        android:lines="1"
+        android:singleLine="true"
+        android:imeOptions="actionDone"
+        android:textColorHint="#7d93aa"
+        android:textColor="#abb2bc"
+        android:textAlignment="center"
+        android:background="@drawable/img_bg_edit"/>
+
+    <EditText
+        android:id="@+id/room_token"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:layout_marginTop="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="房间token"
+        android:maxLines="1"
+        android:lines="1"
+        android:singleLine="true"
+        android:imeOptions="actionDone"
+        android:textColorHint="#7d93aa"
+        android:textColor="#abb2bc"
+        android:textAlignment="center"
+        android:background="@drawable/img_bg_edit"/>
+
+    <EditText
+        android:id="@+id/nick_name"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:layout_marginTop="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="昵称"
+        android:maxLines="1"
+        android:lines="1"
+        android:singleLine="true"
+        android:imeOptions="actionDone"
+        android:textColorHint="#7d93aa"
+        android:textColor="#abb2bc"
+        android:textAlignment="center"
+        android:background="@drawable/img_bg_edit"/>
+
+    <EditText
+        android:id="@+id/media_server_address"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:layout_marginTop="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="服务器地址"
+        android:maxLines="1"
+        android:lines="1"
+        android:singleLine="true"
+        android:imeOptions="actionDone"
+        android:textColorHint="#7d93aa"
+        android:textColor="#abb2bc"
+        android:textAlignment="center"
+        android:background="@drawable/img_bg_edit" />
+
+    <EditText
+        android:id="@+id/media_server_port"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:layout_marginTop="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="服务器端口"
+        android:maxLines="1"
+        android:lines="1"
+        android:singleLine="true"
+        android:imeOptions="actionDone"
+        android:textColorHint="#7d93aa"
+        android:textColor="#abb2bc"
+        android:textAlignment="center"
+        android:background="@drawable/img_bg_edit" />
+
+    <RadioGroup
+        android:id="@+id/media_mode"
+        android:layout_marginTop="15dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:theme="@style/ModuleRadioButton"
+        android:orientation="horizontal"
+        android:checkedButton="@+id/video_mode">
+
+        <RadioButton
+            android:id="@+id/video_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="正常模式"
+            android:layout_marginRight="5dp"
+            android:textSize="13sp"
+            android:textColor="#7d93aa"/>
+
+        <RadioButton
+            android:id="@+id/audio_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="语音模式"
+            android:textSize="13sp"
+            android:layout_marginRight="5dp"
+            android:textColor="#7d93aa"/>
+
+    </RadioGroup>
+
+    <ImageView
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2d343e"/>
+
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <TextView
+        android:layout_marginTop="5dp"
+        android:id="@+id/vvroom_version"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="5dp"
+        android:textColor="#abb2bc"
+        android:textSize="11sp"
+        android:gravity="center" />
+
+    <ImageView
+        android:layout_marginTop="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@mipmap/img_join_line"/>
+
+    <TextView
+        android:id="@+id/login"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="登录"
+        android:textColor="@color/white"
+        android:padding="10dp"
+        android:background="#66000000"
+        android:textAlignment="center"
+        android:textSize="21sp"/>
+
+
+</LinearLayout>

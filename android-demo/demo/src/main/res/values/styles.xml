@@ -8,4 +8,12 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="ModuleRadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
+        <item name="android:colorControlNormal">#7d93aa</item>
+        <item name="android:colorControlActivated">#7d93aa</item>
+        <item name="android:colorControlHighlight">#7d93aa</item>
+        <item name="android:textColorPrimaryDisableOnly">#7d93aa</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat</item>
+    </style>
+
 </resources>
