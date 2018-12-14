@@ -3,16 +3,23 @@ package com.shinevv.vvroom.demo1v1;
 import android.Manifest;
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.StaticLayout;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -34,7 +41,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.socket.client.Socket;
 
-public class VideoActivity extends AppCompatActivity implements IVVListener.IVVMediaListener ,IVVListener.IVVChatListener,IVVListener.IVVConnectionListener,IVVListener.IVVClassListener{
+public class VideoActivity extends AppCompatActivity implements IVVListener.IVVMediaListener ,
+        IVVListener.IVVChatListener,IVVListener.IVVConnectionListener,IVVListener.IVVClassListener, IVVListener.IVVMembersListener,View.OnClickListener {
 
 
     @BindView(R.id.myselfVideo)
@@ -45,8 +53,13 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
     ImageView gua;
     private PeerView peerView;
     private Shinevv shinevvClient;
-    private String userName, peerId,remotePeerId,chatRoomId,roomId;
-    private Socket mSocket;
+    private String userName, peerId,remotePeerId,chatRoomId,roomId,roomToken;
+    private Socket       mSocket;
+    private AudioManager audioManager;
+    private Button       btnUpper;
+    private Button       btnLower;
+    private static long currentTime;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +68,12 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
         keepScreenLongLight(this);
         otherVideo.bringToFront();
         peerView = new PeerView(VideoActivity.this);
+        btnUpper=(Button)findViewById(R.id.btnUpper);
+        btnLower=(Button)findViewById(R.id.btnLower);
+        btnUpper.setOnClickListener(this);
+        btnLower.setOnClickListener(this);
+
+        audioManager=(AudioManager)getSystemService(Service.AUDIO_SERVICE);
 
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         BaseApplication app = (BaseApplication) getApplication();
@@ -63,6 +82,7 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
         userName = intent.getStringExtra("userName");
         String type = intent.getStringExtra("type");
         roomId = intent.getStringExtra("roomId");
+        roomToken = intent.getStringExtra("roomToken");
         peerId = String.valueOf(new Random().nextInt(Integer.MAX_VALUE));
         checkAudioCameraPermission();
 
@@ -71,7 +91,7 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
                 , (type.equals("audio")) ? Shinevv.TRACK_KINE_AUDIO : Shinevv.TRACK_KINE_VIDEO
                 , peerId
                 , userName
-                , "vvroom.shinevv.cn", 3443, "06175684da8706a0da7e0a6fb2aa8d02"
+                , "sdk.sl.shinevv.com", 3443, roomToken
         );
 
         //Toast.makeText(this, (type.equals("audio")) ? "语音通话" : "视频通话", Toast.LENGTH_SHORT).show();
@@ -139,15 +159,6 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
     @Override
     public void onCreateSessionFail(String s) {
         Toast.makeText(this, "create session fail", Toast.LENGTH_LONG).show();
-//        finish();
-    }
-
-    // 本端视频回调
-    @Override
-    public void onAddLocalVideoTrack(VideoTrack videoTrack) {
-        myselfVideo.setMediaTrackInfo(videoTrack);
-        myselfVideo.setMirror(true);
-        otherVideo.setOnTop(true);
     }
 
     protected void clearShinevv() {
@@ -156,6 +167,15 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
             shinevvClient.removeShinevvListener(this);
             shinevvClient = null;
         }
+    }
+
+    /// impl IVVListener.IVVMembersListener
+    // 本端视频回调
+    @Override
+    public void onAddLocalVideoTrack(VideoTrack videoTrack) {
+        myselfVideo.setMediaTrackInfo(videoTrack);
+        myselfVideo.setMirror(true);
+        otherVideo.setOnTop(true);
     }
 
     // 远端视频回调
@@ -196,6 +216,26 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
         myselfVideo.onVideoClose();
     }
 
+    @Override
+    public void onAddRemoteScreenShareTrack(VideoTrack videoTrack, VVUser vvUser) {
+    }
+
+    @Override
+    public void onRemoteScreenShareClose(String peerId) {
+    }
+
+    @Override
+    public void onModifyLocalAudio(boolean success) {
+    }
+
+    @Override
+    public void onModifyLocalVideo(boolean success) {
+    }
+
+    @Override
+    public void onVideoRejectedByServer() {
+    }
+
     // 成员音频暂停
     @Override
     public void onRemoteAudioPaused(String s) {
@@ -208,10 +248,11 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
         otherVideo.onAudioResume();
     }
 
+    // implement IVVListener.IVVClassListener
     @Override
-    public void onClassStart(VVPeers vvPeers) {
+    public void onClassStart(VVPeers vvPeers, long startTime) {
         for(VVUser vvUser : vvPeers.getPeers()){
-            onNewRemotePeer(vvUser);
+            onNewMediaPeer(vvUser);
         }
     }
 
@@ -222,17 +263,53 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
     }
 
     @Override
-    public void onNewRemotePeer(VVUser vvUser) {
+    public void onNewMediaPeer(VVUser vvUser) {
 
+        if(vvUser == null) return;
+        if(peerId.compareTo(vvUser.getPeerId()) == 0) return;
+
+        otherVideo.setPeerInfo(vvUser);
+        otherVideo.setOnTop(true);
     }
 
     @Override
-    public void onRemotePeerClose(String s) {
+    public void onMediaPeerClose(String s) {
         peerView.onPeerClosed();
         Intent intent = new Intent(VideoActivity.this, MainActivity.class);
         setResult(0,intent);
         finish();
         clearShinevv();
+    }
+
+    /// impl IVVListener.IVVMembersListener
+    @Override
+    public void onCurrentPeers(VVPeers currentPeers) {
+    }
+
+    @Override
+    public void onNewPeer(VVUser vvUser) {
+        onNewMediaPeer(vvUser);
+    }
+
+    @Override
+    public void onRemovePeer(VVUser vvUser) {
+
+    }
+
+    /// impl IVVListener.IVVConnectionListener
+    @Override
+    public void onConnected() {
+        Toast.makeText(this, "connected", Toast.LENGTH_LONG).show();
+
+    }
+
+    @Override
+    public void onConnectFail() {
+        Toast.makeText(this, "disconnected", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onKickedOff() {
     }
 
 
@@ -302,15 +379,23 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
 
 
     @Override
-    public void onConnected() {
-        Toast.makeText(this, "connected", Toast.LENGTH_LONG).show();
-
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btnUpper://增多音量
+                //adjustStreamVolume: 调整指定声音类型的音量
+                currentTime = System.currentTimeMillis();
+                audioManager.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);  //调高声音
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);  //调高声音
+                audioManager.adjustStreamVolume(AudioManager.STREAM_VOICE_CALL, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);  //调高声音
+                break;
+            case R.id.btnLower://减少音量
+                //第一个参数：声音类型
+                //第二个参数：调整音量的方向
+                //第三个参数：可选的标志位
+                audioManager.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);//调低声音
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);//调低声音
+                audioManager.adjustStreamVolume(AudioManager.STREAM_VOICE_CALL, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);//调低声音
+                break;
+        }
     }
-
-    @Override
-    public void onConnectFail() {
-        Toast.makeText(this, "disconnected", Toast.LENGTH_LONG).show();
-    }
-
-
 }
