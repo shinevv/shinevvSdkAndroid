@@ -10,9 +10,10 @@
     <com.shinevv.vvroom.demo1v1.view.PeerView
         android:id="@+id/myselfVideo"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-    </com.shinevv.vvroom.demo1v1.view.PeerView>
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true">
+        ›</com.shinevv.vvroom.demo1v1.view.PeerView>
     <com.shinevv.vvroom.demo1v1.view.PeerView
         android:layout_marginTop="16dip"
         android:layout_marginRight="16dip"
@@ -22,6 +23,20 @@
         android:layout_height="160dp">
 
     </com.shinevv.vvroom.demo1v1.view.PeerView>
+
+
+    <Button
+        android:id="@+id/btnUpper"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="增大音量" />
+
+    <Button
+        android:id="@+id/btnLower"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btnUpper"
+        android:text="减小音量" />
 
     <ImageView
         android:id="@+id/hangup"
