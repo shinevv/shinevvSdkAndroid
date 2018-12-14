@@ -1,6 +1,8 @@
 package com.shinevv.vvroom.demo;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -8,6 +10,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.shinevv.vvroom.IVVListener;
@@ -17,6 +21,7 @@ import com.shinevv.vvroom.modles.VVPeers;
 import com.shinevv.vvroom.modles.VVTransportInfo;
 import com.shinevv.vvroom.modles.VVUser;
 
+import org.webrtc.Logging;
 import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
@@ -26,21 +31,50 @@ import java.util.Map;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements
-        IVVListener.IVVConnectionListener, IVVListener.IVVClassListener, IVVListener.IVVMediaListener, IVVListener.IVVStatsListener {
+        IVVListener.IVVConnectionListener, IVVListener.IVVClassListener, IVVListener.IVVMediaListener,
+        IVVListener.IVVStatsListener, IVVListener.IVVMembersListener {
 
     private PeerView peerViewLocal;
     private Map<String, PeerView> peerRemoteViewsMap;
     private List<PeerView> peerViewRemotes;
 
     private static final String peerId = String.valueOf(new Random().nextInt(Integer.MAX_VALUE));
-    private static final String displayName = "android-demo";
-    private VVUser currentUser = new VVUser(displayName, peerId, VVUser.ROLE_STUDENT);
+    private String displayName = "android-demo";
+    private VVUser currentUser;
     private Shinevv shinevvClient;
+
+    private ImageView ivCameraControl;
+    private View vCameraSwitch;
+    private ImageView ivPhoneControl;
+    private ImageView ivSpeakerControl;
+    private boolean enableVideo = true;
+    private boolean frontCamera = true;
+    private boolean enableAudio = true;
+    private boolean enableSpeakerFree = false;
+
+    protected String mediaMode = Shinevv.TRACK_KINE_VIDEO;
+    protected String roomId;
+    protected String roomToken;
+    protected String mediaServerAddress;
+    protected int mediaServerPort;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Intent intent = getIntent();
+        if (intent != null) {
+            mediaMode = intent.getStringExtra(Constants.INTENT_MEDIA_MODE);
+            roomId = intent.getStringExtra(Constants.INTENT_ROOM_NUMBER);
+            roomToken = intent.getStringExtra(Constants.INTENT_ROOM_TOKEN);
+            displayName = intent.getStringExtra(Constants.INTENT_NICK_NAME);
+            mediaServerAddress = intent.getStringExtra(Constants.INTENT_MEDIA_ADDRESS);
+            mediaServerPort = intent.getIntExtra(Constants.INTENT_MEDIA_PORT, 3443);
+        }
+
+
+        currentUser = new VVUser(displayName, peerId, VVUser.ROLE_STUDENT);
 
         peerViewLocal = findViewById(R.id.peer_local);
         peerRemoteViewsMap = new HashMap<>();
@@ -58,11 +92,13 @@ public class MainActivity extends AppCompatActivity implements
 
         // init
         shinevvClient = new Shinevv(getApplicationContext()
-                , "7"            // 房间号
-                , Shinevv.TRACK_KINE_VIDEO
+                , roomId            // 房间号
+                , mediaMode
                 , peerId
                 , displayName
-                , "192.168.1.226", 3443, "06175684da8706a0da7e0a6fb2aa8d02"
+                , mediaServerAddress
+                , mediaServerPort
+                , roomToken
         );
         shinevvClient.addShinevvListener(this);
         shinevvClient.joinRoom();
@@ -73,6 +109,45 @@ public class MainActivity extends AppCompatActivity implements
         for (PeerView remoteView : peerViewRemotes) {
             remoteView.init(shinevvClient.getEglBaseContext());
         }
+
+        // 摄像头控制
+        ivCameraControl = findViewById(R.id.camera_control);
+        vCameraSwitch = findViewById(R.id.camera_switch);
+        ivPhoneControl = findViewById(R.id.phone_control);
+        ivSpeakerControl = findViewById(R.id.speaker_control);
+
+        ivCameraControl.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleCamera();
+            }
+        });
+        vCameraSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchCamera();
+            }
+        });
+        ivPhoneControl.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePhone();
+            }
+        });
+        ivSpeakerControl.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleSpeaker();
+            }
+        });
+
+        if (mediaMode.equals(Shinevv.TRACK_KINE_AUDIO)) {
+            enableVideo = false;
+        }
+        ivCameraControl.setImageResource(enableVideo ? R.mipmap.ic_camera_captuering : R.mipmap.ic_camera_enable);
+        ivPhoneControl.setImageResource(R.mipmap.ic_phone_recording);
+
+        updateRoomInfo();
     }
 
     @Override
@@ -114,11 +189,18 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onClassStart(VVPeers currentPeers) {
+    public void onKickedOff() {
+        Toast.makeText(this, "您被管理员移出房间", Toast.LENGTH_LONG).show();
+        finish();
+    }
+
+    /// implement IVVListener.IVVClassListener
+    @Override
+    public void onClassStart(VVPeers peers, long startTime) {
         // 课程开始
         Toast.makeText(this, "class begin", Toast.LENGTH_LONG).show();
-        for(VVUser vvUser : currentPeers.getPeers()){
-            onNewRemotePeer(vvUser);
+        for(VVUser vvUser : peers.getPeers()){
+            onNewPeer(vvUser);
         }
     }
 
@@ -135,7 +217,34 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onNewRemotePeer(VVUser vvUser) {
+    public void onNewMediaPeer(VVUser vvUser) {
+        onNewPeer(vvUser);
+        updateRoomInfo();
+    }
+
+    @Override
+    public void onMediaPeerClose(String peerId) {
+        updateRoomInfo();
+    }
+
+    public void updateRoomInfo() {
+
+        setTitle(String.format("%s - %d人 - %s - %s",
+                    roomId,
+                    peerRemoteViewsMap.size()+1,
+                    (mediaMode.equals(Shinevv.TRACK_KINE_VIDEO) ? "正常模式":"语音模式"),
+                    displayName
+        ));
+    }
+
+
+    /// impl IVVListener.IVVMembersListener
+    @Override
+    public void onCurrentPeers(VVPeers currentPeers) {
+    }
+
+    @Override
+    public void onNewPeer(VVUser vvUser) {
         // 新成员进入
         if(vvUser == null) return;
         if(peerRemoteViewsMap.containsKey(vvUser.getPeerId())) return;
@@ -154,15 +263,20 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onRemotePeerClose(String peerId) {
+    public void onRemovePeer(VVUser vvUser) {
         // 成员离开
-        if (peerRemoteViewsMap.containsKey(peerId)) {
-            PeerView peerView = peerRemoteViewsMap.get(peerId);
-            peerView.onPeerClosed();
-            peerRemoteViewsMap.remove(peerId);
+        if (peerRemoteViewsMap.containsKey(vvUser.getPeerId())) {
+            PeerView peerView = peerRemoteViewsMap.get(vvUser.getPeerId());
+            if (peerView != null) {
+                peerView.onPeerClosed();
+                peerRemoteViewsMap.remove(vvUser.getPeerId());
+
+                updateRoomInfo();
+            }
         }
     }
 
+    /// impl IVVListener.IVVMediaListener
     @Override
     public void onCreateSessionFail(String errorDesc) {
         Toast.makeText(this, "create session fail", Toast.LENGTH_LONG).show();
@@ -178,14 +292,30 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onAddRemoteVideoTrack(VideoTrack videoTrack, VVUser vvUser) {
+
+        onNewPeer(vvUser);
+
         // 远端视频回调
         if (peerRemoteViewsMap.containsKey(vvUser.getPeerId())) {
             PeerView peerView = peerRemoteViewsMap.get(vvUser.getPeerId());
             peerView.setMediaTrackInfo(videoTrack);
+            peerView.setPeerInfo(vvUser);
 
             // 为了节省带宽，远端视频默认不接受，需要手动开启
             shinevvClient.pauseRemotePeerVideo(vvUser.getPeerId(), false);
         }
+    }
+
+    @Override
+    public void onModifyLocalAudio(boolean success) {
+    }
+
+    @Override
+    public void onModifyLocalVideo(boolean success) {
+    }
+
+    @Override
+    public void onVideoRejectedByServer() {
     }
 
     @Override
@@ -213,8 +343,18 @@ public class MainActivity extends AppCompatActivity implements
         // 成员视频关闭
         if (peerRemoteViewsMap.containsKey(peerId)) {
             PeerView peerView = peerRemoteViewsMap.get(peerId);
-            peerView.onVideoClose();
+            if (peerView != null) {
+                peerView.onVideoClose();
+            }
         }
+    }
+
+    @Override
+    public void onAddRemoteScreenShareTrack(VideoTrack videoTrack, VVUser vvUser) {
+    }
+
+    @Override
+    public void onRemoteScreenShareClose(String peerId) {
     }
 
     @Override
@@ -301,5 +441,35 @@ public class MainActivity extends AppCompatActivity implements
                 noExternalStoragePermission = false;
             }
         }
+    }
+
+    //开启或关闭视频
+    private void toggleCamera(){
+        enableVideo = !enableVideo;
+        shinevvClient.modifyVideoStatus(enableVideo);
+        ivCameraControl.setImageResource(enableVideo ?  R.mipmap.ic_camera_captuering : R.mipmap.ic_camera_enable);
+        if(!enableVideo){
+            peerViewLocal.onVideoClose();
+        }
+
+        mediaMode = enableVideo ? Shinevv.TRACK_KINE_VIDEO : Shinevv.TRACK_KINE_AUDIO;
+        updateRoomInfo();
+    }
+
+    private void switchCamera(){
+        frontCamera = !frontCamera;
+        shinevvClient.switchCamera();
+    }
+
+    private void togglePhone(){
+        enableAudio = !enableAudio;
+        shinevvClient.modifyAudioStatus(enableAudio);
+        ivPhoneControl.setImageResource(enableAudio ? R.mipmap.ic_phone_recording : R.mipmap.ic_phone_enable);
+    }
+
+    private void toggleSpeaker(){
+        enableSpeakerFree = !enableSpeakerFree;
+        shinevvClient.setSpeakerEnable(enableSpeakerFree);
+        ivSpeakerControl.setImageResource(enableSpeakerFree ? R.mipmap.ic_speaker_enable : R.mipmap.ic_speaker_disable);
     }
 }
