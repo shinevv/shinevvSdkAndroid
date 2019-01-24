@@ -38,6 +38,21 @@
         android:layout_below="@+id/btnUpper"
         android:text="减小音量" />
 
+    <Button
+        android:id="@+id/btnprohibit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="静音"
+        android:layout_below="@+id/btnLower"
+        />
+
+    <Button
+        android:id="@+id/btnhf"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btnprohibit"
+        android:text="免提" />
+
     <ImageView
         android:id="@+id/hangup"
         android:layout_width="60dp"

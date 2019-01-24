@@ -21,6 +21,8 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.shinevv.vvroom.demo1v1.view.DialogUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -54,6 +56,8 @@ public class MainFragment extends Fragment {
 
     private Boolean isConnected = true;
     private  WindowManager.LayoutParams lp;
+    private TextView text_roomid;
+    private View popupWindow;
 
     public MainFragment() {
         super();
@@ -88,7 +92,6 @@ public class MainFragment extends Fragment {
         mSocket.on("call end", onCallEnd);        //通话结束
         mSocket.on("getroom", onGetRoom);         //获取房间号
         mSocket.connect();
-
         startSignIn();
     }
 
@@ -101,7 +104,7 @@ public class MainFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-
+        DialogUtils.getDialogInstance(getActivity()).disMiss();
         mSocket.disconnect();
 
         mSocket.off(Socket.EVENT_CONNECT, onConnect);
@@ -114,6 +117,8 @@ public class MainFragment extends Fragment {
         mSocket.off("call agree", onCallAgree);
         mSocket.off("call end", onCallEnd);
         mSocket.off("getroom", onGetRoom);
+
+        mSocket=null;
     }
 
     @Override
@@ -121,6 +126,8 @@ public class MainFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         memberListView = (ListView) view.findViewById(R.id.list_members);
+        text_roomid = (TextView) view.findViewById(R.id.text_roomid);
+        text_roomid.setText("房间号为:"+currentRoomId);
         memberAdapter = new ArrayAdapter<String>(getActivity(),
                 android.R.layout.simple_list_item_1, android.R.id.text1, memberList){
             class ViewHolder {
@@ -160,10 +167,10 @@ public class MainFragment extends Fragment {
 //                        mSocket.emit("getroom");
 
                         // 发起通话请求
-                        Log.e("参数","currentRoomId: "+currentRoomId + "currentRoomToken"+currentRoomToken);
                         if(meSelfRoomId!=0){
 
                             currentRoomId = meSelfRoomId;
+                            text_roomid.setText("房间号为:"+currentRoomId);
                             mSocket.emit("call", mTargetUsername, currentMethod, currentRoomId, currentRoomToken);
                             showWaitPopupWindow(true, currentMethod, currentRoomId, currentRoomToken);
 
@@ -181,11 +188,10 @@ public class MainFragment extends Fragment {
 //                        mSocket.emit("getroom");
 
                         // 发起通话请求
-                        Log.e("参数","currentRoomId: "+currentRoomId + "currentRoomToken"+currentRoomToken);
-
                         if(meSelfRoomId!=0){
 
                             currentRoomId = meSelfRoomId;
+                            text_roomid.setText("房间号为:"+currentRoomId);
                             mSocket.emit("call", mTargetUsername, currentMethod, currentRoomId, currentRoomToken);
                             showWaitPopupWindow(true, currentMethod, currentRoomId, currentRoomToken);
 
@@ -206,6 +212,12 @@ public class MainFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+
+        if(meSelfRoomId!=0){
+            Log.e("充值房间号","充值房间号");
+            currentRoomId = meSelfRoomId;
+        }
+
         if (requestCode == REQUEST_LOGIN) {
             if (Activity.RESULT_OK != resultCode) {
                 getActivity().finish();
@@ -222,6 +234,7 @@ public class MainFragment extends Fragment {
             }
             memberAdapter.notifyDataSetChanged();
         } else if (requestCode == REQUEST_VIDEO) {
+            text_roomid.setText("房间号为:"+currentRoomId);
             mSocket.emit("call end", currentRoomId);
         }
     }
@@ -251,10 +264,10 @@ public class MainFragment extends Fragment {
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.i(TAG, "disconnected");
                     isConnected = false;
-                    Toast.makeText(getActivity().getApplicationContext(),
-                            R.string.disconnect, Toast.LENGTH_LONG).show();
+                    if(!getActivity().isFinishing()){
+                        DialogUtils.getDialogInstance(getActivity()).showNormalDialog("网络断开,请检查网络或稍后再试",false);
+                    }
                 }
             });
         }
@@ -266,9 +279,9 @@ public class MainFragment extends Fragment {
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e(TAG, "Error connecting");
-                    Toast.makeText(getActivity().getApplicationContext(),
-                            R.string.error_connect, Toast.LENGTH_LONG).show();
+                    if(!getActivity().isFinishing()) {
+                        DialogUtils.getDialogInstance(getActivity()).showNormalDialog("网络异常,请检查网络或稍后再试", false);
+                    }
                 }
             });
         }
@@ -298,12 +311,12 @@ public class MainFragment extends Fragment {
 
                     // 判断是否当前用户的消息  名字的匹配
                     if (mUsername!=null&&mUsername.compareTo(targetUser) == 0) {
-                        Log.e("onCalling","targetUser:"+targetUser+"mUsername:"+mUsername);
                         Toast.makeText(getActivity(), sourceUser+" 请求通话", Toast.LENGTH_LONG).show();
                         //别人的调用方式,电话/视屏
                         currentMethod = method;
                         //别人的房间号
                         currentRoomId = roomId;
+                        text_roomid.setText("房间号为:"+currentRoomId);
                         showWaitPopupWindow(false, method, roomId, roomToken);
                     }
                 }
@@ -328,8 +341,7 @@ public class MainFragment extends Fragment {
 
                     // 判断是否当前用户的消息
                     if (roomId == currentRoomId) {
-                        Log.e("onCallAgree","currentRoomId:"+currentRoomId+"后台给的roomId:"+roomId);
-
+                        text_roomid.setText("房间号为:"+currentRoomId);
                         if (popupWindow2 != null) {
                             popupWindow2.dismiss();
                         }
@@ -338,7 +350,7 @@ public class MainFragment extends Fragment {
                         intent.putExtra("userName", mUsername);
                         intent.putExtra("roomId", roomId+"");
                         intent.putExtra("roomToken", currentRoomToken);
-                        getActivity().startActivityForResult(intent, REQUEST_VIDEO);
+                        startActivityForResult(intent, REQUEST_VIDEO);
                     }
                 }
             });
@@ -367,9 +379,7 @@ public class MainFragment extends Fragment {
                         currentMethod = 0;
                         //别人的房间号
                         currentRoomId = meSelfRoomId;
-
-                        Log.e("onCallEnd","currentRoomId:"+currentRoomId+"后台给的roomId:"+roomId+"恢复默认值:"+meSelfRoomId);
-
+                        text_roomid.setText("房间号为:"+currentRoomId);
                         if (popupWindow2 != null) {
                             popupWindow2.dismiss();
                             lp.alpha = 1f;
@@ -448,7 +458,6 @@ public class MainFragment extends Fragment {
                     String strRoomId;
                     try {
                         strRoomId = data.getString("roomid");
-                        Log.e("获取的房间号",strRoomId);
                         currentRoomToken = data.getString("token");
                     } catch (JSONException e) {
                         Log.e(TAG, e.getMessage());
@@ -462,7 +471,6 @@ public class MainFragment extends Fragment {
 
                     try {
                         meSelfRoomId = Integer.valueOf(strRoomId);
-                        Log.e("onGetRoom","恢复默认值:"+meSelfRoomId);
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage());
                         return;
@@ -500,7 +508,7 @@ public class MainFragment extends Fragment {
                 intent.putExtra("userName", mUsername);
                 intent.putExtra("roomId", roomId+"");
                 intent.putExtra("roomToken", roomToken);
-                getActivity().startActivityForResult(intent, REQUEST_VIDEO);
+                startActivityForResult(intent, REQUEST_VIDEO);
 
                 popupWindow2.dismiss();
                 lp.alpha = 1f;
@@ -516,8 +524,10 @@ public class MainFragment extends Fragment {
                 //别人的调用方式,电话/视屏
                 currentMethod = 0;
                 //别人的房间号
+                Log.e("meSelfRoomId",meSelfRoomId+"");
                 currentRoomId = meSelfRoomId;
-                Log.e("挂電話","恢复默认值:"+meSelfRoomId);
+                text_roomid.setText("房间号为:"+currentRoomId);
+
                 popupWindow2.dismiss();
                 lp.alpha = 1f;
                 getActivity().getWindow().setAttributes(lp);

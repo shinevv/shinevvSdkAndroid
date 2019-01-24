@@ -16,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.StaticLayout;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -25,6 +26,7 @@ import android.widget.Toast;
 
 import com.shinevv.vvroom.IVVListener;
 import com.shinevv.vvroom.Shinevv;
+import com.shinevv.vvroom.demo1v1.view.DialogUtils;
 import com.shinevv.vvroom.demo1v1.view.PeerView;
 import com.shinevv.vvroom.modles.VVChatMsg;
 import com.shinevv.vvroom.modles.VVPeers;
@@ -59,6 +61,10 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
     private Button       btnUpper;
     private Button       btnLower;
     private static long currentTime;
+    private Button btnprohibit;
+    private Button btnhf;
+    private boolean isProhibit;
+    private boolean enableAudio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +76,12 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
         peerView = new PeerView(VideoActivity.this);
         btnUpper=(Button)findViewById(R.id.btnUpper);
         btnLower=(Button)findViewById(R.id.btnLower);
+        btnprohibit=(Button)findViewById(R.id.btnprohibit);
+        btnhf=(Button)findViewById(R.id.btnhf);
+        btnhf.setOnClickListener(this);
         btnUpper.setOnClickListener(this);
         btnLower.setOnClickListener(this);
+        btnprohibit.setOnClickListener(this);
 
         audioManager=(AudioManager)getSystemService(Service.AUDIO_SERVICE);
 
@@ -98,7 +108,7 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
 
         shinevvClient.addShinevvListener(this);
         shinevvClient.joinRoom();
-        shinevvClient.setSpeakerEnable(false);
+        shinevvClient.setSpeakerEnable(isProhibit);
         myselfVideo.init(shinevvClient.getEglBaseContext());
         otherVideo.init(shinevvClient.getEglBaseContext());
         //視頻
@@ -130,6 +140,9 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
             shinevvClient.dispose();
             shinevvClient.removeShinevvListener(this);
             shinevvClient = null;
+            mSocket = null;
+            audioManager=null;
+            DialogUtils.getDialogInstance(this).disMiss();
         }
         super.onDestroy();
     }
@@ -152,13 +165,6 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
     @Override
     public void onRecTextMessage(@NonNull VVChatMsg vvChatMsg) {
 
-    }
-
-
-    //创建会话失败
-    @Override
-    public void onCreateSessionFail(String s) {
-        Toast.makeText(this, "create session fail", Toast.LENGTH_LONG).show();
     }
 
     protected void clearShinevv() {
@@ -296,6 +302,16 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
 
     }
 
+
+
+    //创建会话失败
+    @Override
+    public void onCreateSessionFail(String s) {
+        if(!(VideoActivity.this.isFinishing())){
+            DialogUtils.getDialogInstance(this).showNormalDialog("会话创建失败,请稍后再试",true);
+        }
+    }
+
     /// impl IVVListener.IVVConnectionListener
     @Override
     public void onConnected() {
@@ -305,7 +321,9 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
 
     @Override
     public void onConnectFail() {
-        Toast.makeText(this, "disconnected", Toast.LENGTH_LONG).show();
+        if(!(VideoActivity.this.isFinishing())){
+            DialogUtils.getDialogInstance(this).showNormalDialog("连接失败,请检查网络或稍后再试",true);
+        }
     }
 
     @Override
@@ -396,6 +414,25 @@ public class VideoActivity extends AppCompatActivity implements IVVListener.IVVM
                 audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);//调低声音
                 audioManager.adjustStreamVolume(AudioManager.STREAM_VOICE_CALL, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);//调低声音
                 break;
+            case R.id.btnprohibit://禁止音频
+                if (!enableAudio) {
+                    btnprohibit.setText("恢复");
+                } else {
+                    btnprohibit.setText("静音");
+                }
+                shinevvClient.modifyAudioStatus(enableAudio);
+                enableAudio = !enableAudio;
+                break;
+            case R.id.btnhf://减少音量
+                if (!isProhibit) {
+                    btnhf.setText("关免提");
+                } else {
+                    btnhf.setText("开免提");
+                }
+                shinevvClient.setSpeakerEnable(!isProhibit);
+                isProhibit = !isProhibit;
+                break;
         }
     }
+
 }

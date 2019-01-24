@@ -19,6 +19,7 @@ import javax.net.ssl.X509TrustManager;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
+import okhttp3.OkHttpClient;
 
 public class BaseApplication extends Application {
 
@@ -50,13 +51,33 @@ public class BaseApplication extends Application {
                 }
             };
 
-            options = new IO.Options();
-            options.sslContext = mySSLContext;
-            options.hostnameVerifier = myHostnameVerifier;
+            OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                    .hostnameVerifier(myHostnameVerifier)
+                    .sslSocketFactory(mySSLContext.getSocketFactory(), new X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[] {};
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] chain,
+                                                       String authType) throws CertificateException {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] chain,
+                                                       String authType) throws CertificateException {
+                        }
+                    })
+                    .build(); // default settings for all sockets
+
+            IO.setDefaultOkHttpWebSocketFactory(okHttpClient);
+            IO.setDefaultOkHttpCallFactory(okHttpClient);
+
+            options.secure = true;
+            options.callFactory = okHttpClient;
+            options.webSocketFactory = okHttpClient;
+
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
         }
-        //options.secure = true;
 
         try {
             mSocket = IO.socket(Constants.DEMO_SERVER_URL, options);
