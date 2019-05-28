@@ -39,13 +39,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-<<<<<<< HEAD
-        <activity
-            android:name=".LoginActivity"
-            android:screenOrientation="portrait">
-=======
         <activity android:name=".LoginActivity">
->>>>>>> e0470175ed8cec92f667c81fe8784ef5fc466378
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -55,16 +49,10 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-<<<<<<< HEAD
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme"
-            android:windowSoftInputMode="stateHidden|adjustResize"></activity>
-=======
-            android:windowSoftInputMode="stateHidden|adjustResize"
             android:theme="@style/AppTheme"
             android:configChanges="orientation|screenSize">
         </activity>
->>>>>>> e0470175ed8cec92f667c81fe8784ef5fc466378
     </application>
 
 </manifest>
