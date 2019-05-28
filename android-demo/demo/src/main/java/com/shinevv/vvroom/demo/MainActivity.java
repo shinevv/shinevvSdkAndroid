@@ -188,6 +188,11 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void onRejectedPeerMax() {
+
+    }
+
+    @Override
     public void onKickedOff() {
         Toast.makeText(this, "您被管理员移出房间", Toast.LENGTH_LONG).show();
         finish();
@@ -285,6 +290,11 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    @Override
+    public void onRoleChanged(VVUser vvUser) {
+
+    }
+
     /// impl IVVListener.IVVMediaListener
     @Override
     public void onCreateSessionFail(String errorDesc) {
@@ -313,18 +323,6 @@ public class MainActivity extends AppCompatActivity implements
             // 为了节省带宽，远端视频默认不接受，需要手动开启
             shinevvClient.pauseRemotePeerVideo(vvUser.getPeerId(), false);
         }
-    }
-
-    @Override
-    public void onModifyLocalAudio(boolean success) {
-    }
-
-    @Override
-    public void onModifyLocalVideo(boolean success) {
-    }
-
-    @Override
-    public void onVideoRejectedByServer() {
     }
 
     @Override
