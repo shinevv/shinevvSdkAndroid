@@ -17,7 +17,11 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
     @Test
+<<<<<<< HEAD
     public void useAppContext() {
+=======
+    public void useAppContext() throws Exception {
+>>>>>>> e0470175ed8cec92f667c81fe8784ef5fc466378
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 

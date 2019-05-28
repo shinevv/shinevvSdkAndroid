@@ -4,9 +4,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+<<<<<<< HEAD
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+=======
+import android.net.Uri;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.util.Base64;
+>>>>>>> e0470175ed8cec92f667c81fe8784ef5fc466378
 import android.util.DisplayMetrics;
 import android.view.Surface;
 import android.view.View;
@@ -14,10 +22,20 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+<<<<<<< HEAD
 import com.shinevv.vvroom.Shinevv;
 
 import org.webrtc.Logging;
 
+=======
+import com.alibaba.fastjson.JSON;
+import com.shinevv.vvroom.Shinevv;
+import com.shinevv.vvroom.modles.VVUser;
+
+import org.webrtc.Logging;
+
+
+>>>>>>> e0470175ed8cec92f667c81fe8784ef5fc466378
 public class LoginActivity extends AppCompatActivity {
 
     public static final String TAG = LoginActivity.class.getSimpleName();
