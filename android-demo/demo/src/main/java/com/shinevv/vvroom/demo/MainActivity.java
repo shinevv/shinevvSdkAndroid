@@ -466,6 +466,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void switchCamera() {
         frontCamera = !frontCamera;
+        peerViewLocal.setMirror(frontCamera);
         shinevvClient.switchCamera();
     }
 
