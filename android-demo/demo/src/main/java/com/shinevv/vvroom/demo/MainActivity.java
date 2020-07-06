@@ -193,6 +193,11 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void onRejectedDuplicationTeacher() {
+
+    }
+
+    @Override
     public void onKickedOff() {
         Toast.makeText(this, "您被管理员移出房间", Toast.LENGTH_LONG).show();
         finish();
@@ -380,6 +385,21 @@ public class MainActivity extends AppCompatActivity implements
             PeerView peerView = peerRemoteViewsMap.get(peerId);
             peerView.onAudioResume();
         }
+    }
+
+    @Override
+    public void onDoubleScreen(boolean b) {
+
+    }
+
+    @Override
+    public void onRoomAudioMute(boolean b) {
+
+    }
+
+    @Override
+    public void onRoomVideoDisable(boolean b) {
+
     }
 
     @Override
